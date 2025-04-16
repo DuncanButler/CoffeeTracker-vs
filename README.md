@@ -19,7 +19,7 @@ I created the aspire default web app project in visual studio and moved the proj
 
 Create issue and start work, this creates a branch for us to work on, and use as a PR into the main when we are ready and finished
 
-then asked copilot to do the actual coding with 
+then asked Copilot to do the actual coding with 
 ```add swagger to the API service```
 
 had to add the dependencies running on the command line
