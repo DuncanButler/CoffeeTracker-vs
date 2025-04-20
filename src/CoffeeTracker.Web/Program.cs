@@ -1,4 +1,4 @@
-using CoffeeTracker.Web;
+using CoffeeTracker.Web.Clients;
 using CoffeeTracker.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);

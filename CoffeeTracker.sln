@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeTracker.AppHost", "infrastructure\CoffeeTracker.AppHost\CoffeeTracker.AppHost.csproj", "{19FFF6B8-4A0C-4103-90AA-0E9B18CC8B36}"
 EndProject
@@ -9,6 +9,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeTracker.ApiService", "src\CoffeeTracker.ApiService\CoffeeTracker.ApiService.csproj", "{60F2958D-8CA3-C62C-1B1D-F42A2C48B1AD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeTracker.Web", "src\CoffeeTracker.Web\CoffeeTracker.Web.csproj", "{40982682-D9FE-61BF-106D-018A2E55471D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "infrastructure", "infrastructure", "{1D33A5DA-C2E3-4188-858D-B5B68761C58A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +39,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{19FFF6B8-4A0C-4103-90AA-0E9B18CC8B36} = {1D33A5DA-C2E3-4188-858D-B5B68761C58A}
+		{D9838D75-87AE-89BD-A8CE-A55D787A17AF} = {1D33A5DA-C2E3-4188-858D-B5B68761C58A}
+		{60F2958D-8CA3-C62C-1B1D-F42A2C48B1AD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{40982682-D9FE-61BF-106D-018A2E55471D} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B030AE01-5155-4AC3-B894-EB4C0DA51F16}

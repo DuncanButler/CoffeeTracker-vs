@@ -1,4 +1,4 @@
-namespace CoffeeTracker.Web;
+namespace CoffeeTracker.Web.Clients;
 
 public class WeatherApiClient(HttpClient httpClient)
 {
