@@ -2,8 +2,7 @@
 
 ## Introduction
 
-This is a demo app that demonstrates using copilot agent and Model Context Protocal servers (MCP), along with a version of the general development techniques, in this case raising issues with github, pull requests and review
-
+This is a demo app that demonstrates using copilot agent and Model Context Protocol servers (MCP), along with a version of the general development techniques, in this case raising issues with github, pull requests and review
 ## Issue 0
 
 created the basic aspire starter app with browser web app, split into infrastructure and src folders, this was then manually adjusted and run locally.
