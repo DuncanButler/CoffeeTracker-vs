@@ -22,4 +22,4 @@ run and retested the app, check in and do the PR
 
 ## Issue 2
 
-Create this document and the architecuture diagrams, and figma drawings
+Create this document and the architecture diagrams, and figma drawings
