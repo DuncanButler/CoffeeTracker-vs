@@ -1,4 +1,4 @@
-using CoffeeTracker.Migrations.Data;
+using CoffeeTracker.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

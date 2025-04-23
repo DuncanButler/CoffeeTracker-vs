@@ -1,14 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration;
 
-namespace CoffeeTracker.Migrations.Data;
+namespace CoffeeTracker.Data;
 
 // This class helps EF Core tools like migrations to create an instance of our DbContext
 public class WeatherDbContextFactory : IDesignTimeDbContextFactory<WeatherDbContext>
 {
     public WeatherDbContext CreateDbContext(string[] args)
     {
+        /*
+         * This factory is only used by the EF Core CLI tools (like migrations)
+         * when run outside the Aspire runtime environment.
+         * 
+         * During normal application execution, the DbContext is created by
+         * the Aspire service container with injected connection information.
+         */
+
         // First try to get connection info from environment (Aspire may set this)
         string connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__weatherdb");
         

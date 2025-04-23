@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeTracker.Migrations", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeTracker.Models", "src\CoffeeTracker.Models\CoffeeTracker.Models.csproj", "{235AEC7A-F178-4A97-A643-F41150239545}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoffeeTracker.Data", "src\CoffeeTracker.Data\CoffeeTracker.Data.csproj", "{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,18 @@ Global
 		{235AEC7A-F178-4A97-A643-F41150239545}.Release|x64.Build.0 = Release|Any CPU
 		{235AEC7A-F178-4A97-A643-F41150239545}.Release|x86.ActiveCfg = Release|Any CPU
 		{235AEC7A-F178-4A97-A643-F41150239545}.Release|x86.Build.0 = Release|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Debug|x64.Build.0 = Debug|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Debug|x86.Build.0 = Debug|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Release|x64.ActiveCfg = Release|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Release|x64.Build.0 = Release|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Release|x86.ActiveCfg = Release|Any CPU
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -112,6 +126,7 @@ Global
 		{40982682-D9FE-61BF-106D-018A2E55471D} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{32D776AB-654B-4313-BEC8-C68826869BBC} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{235AEC7A-F178-4A97-A643-F41150239545} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{FED3E859-4F7B-4D5A-8EBA-20745FEA3D2A} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B030AE01-5155-4AC3-B894-EB4C0DA51F16}

@@ -1,4 +1,4 @@
-﻿using CoffeeTracker.ApiService.Data;
+﻿using CoffeeTracker.Data;
 using CoffeeTracker.ApiService.Interfaces;
 using CoffeeTracker.Models;
 using Microsoft.EntityFrameworkCore;
@@ -35,11 +35,10 @@ public class WeatherRepository : IWeatherRepository
         
         // Save changes to the database
         await _dbContext.SaveChangesAsync();
-    }
-
-    private async Task UpdatedExistingForcast(WeatherForecast existingForecast, WeatherForecast dayforcast)
+    }    private Task UpdatedExistingForcast(WeatherForecast existingForecast, WeatherForecast dayforcast)
     {
         _dbContext.Entry(existingForecast).CurrentValues.SetValues(dayforcast);
+        return Task.CompletedTask;
     }
 
     private async Task AddNewForcast(WeatherForecast dayforcast)

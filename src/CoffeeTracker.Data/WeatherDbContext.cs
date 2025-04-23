@@ -1,7 +1,7 @@
 using CoffeeTracker.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace CoffeeTracker.Migrations.Data;
+namespace CoffeeTracker.Data;
 
 public class WeatherDbContext : DbContext
 {

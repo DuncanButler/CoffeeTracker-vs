@@ -1,4 +1,4 @@
-using CoffeeTracker.ApiService.Data;
+using CoffeeTracker.Data;
 using CoffeeTracker.ApiService.Endpoints;
 using CoffeeTracker.ApiService.Interfaces;
 using CoffeeTracker.ApiService.Repositories;
