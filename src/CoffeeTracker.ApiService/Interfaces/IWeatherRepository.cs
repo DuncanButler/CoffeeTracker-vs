@@ -1,4 +1,4 @@
-﻿using CoffeeTracker.ApiService.Models;
+﻿using CoffeeTracker.Models;
 
 namespace CoffeeTracker.ApiService.Interfaces;
 public interface IWeatherRepository

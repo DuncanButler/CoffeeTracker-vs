@@ -1,4 +1,4 @@
-﻿using CoffeeTracker.ApiService.Models;
+﻿using CoffeeTracker.Models;
 using CoffeeTracker.ApiService.Services;
 
 namespace CoffeeTracker.ApiService.Endpoints

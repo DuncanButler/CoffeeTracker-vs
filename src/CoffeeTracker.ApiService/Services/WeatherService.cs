@@ -1,6 +1,6 @@
 ﻿using System;
 using CoffeeTracker.ApiService.Interfaces;
-using CoffeeTracker.ApiService.Models;
+using CoffeeTracker.Models;
 
 namespace CoffeeTracker.ApiService.Services;
 
@@ -20,20 +20,23 @@ public class WeatherService : IWeatherService
 
     async Task<WeatherForecast[]> IWeatherService.GetWeatherForecastAsync()
     {
-        WeatherForecast[] forecast = await Task.WhenAll(Enumerable.Range(1, 5).Select(async index =>
+        var forecasts = new List<WeatherForecast>();
+
+        // Process forecasts sequentially instead of in parallel to avoid DbContext concurrency issues
+        for (int index = 1; index <= 5; index++)
         {
             var day = DateOnly.FromDateTime(DateTime.Now.AddDays(index));
-            WeatherForecast? dayforcast = await _repository.GetForcastForDay(day);
+            WeatherForecast? dayForecast = await _repository.GetForcastForDay(day);
 
-            if (dayforcast is null)
+            if (dayForecast is null)
             {
-                dayforcast = GenerateForecastForDay(day);
-                await _repository.SaveForcastForDay(dayforcast);
+                dayForecast = GenerateForecastForDay(day);
+                await _repository.SaveForcastForDay(dayForecast);
             }
-            return dayforcast;
-        }));
+            forecasts.Add(dayForecast);
+        }
 
-        return forecast;
+        return forecasts.ToArray();
     }
 
     WeatherForecast GenerateForecastForDay(DateOnly day)
