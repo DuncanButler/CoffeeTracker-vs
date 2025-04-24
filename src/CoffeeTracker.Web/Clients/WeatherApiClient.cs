@@ -1,6 +1,10 @@
 namespace CoffeeTracker.Web.Clients;
 
-public class WeatherApiClient(HttpClient httpClient)
+public interface IWeatherApiClient
+{
+    Task<WeatherForecast[]> GetWeatherAsync(int maxItems = 10, CancellationToken cancellationToken = default);
+}
+public class WeatherApiClient(HttpClient httpClient): IWeatherApiClient
 {
     public async Task<WeatherForecast[]> GetWeatherAsync(int maxItems = 10, CancellationToken cancellationToken = default)
     {
