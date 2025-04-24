@@ -1,10 +1,12 @@
 using Bunit;
+using CoffeeTracker.Models;
 using CoffeeTracker.Web.Clients;
 using CoffeeTracker.Web.Components.Pages;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -12,7 +14,8 @@ using Xunit;
 namespace CoffeeTracker.Web.Tests;
 
 public class WeatherPageTests : TestContext
-{    [Fact]
+{
+    [Fact]
     public void WeatherPage_DisplaysLoadingState_Initially()
     {
         // Arrange - Create a mock WeatherApiClient
@@ -23,8 +26,8 @@ public class WeatherPageTests : TestContext
             .Setup(client => client.GetWeatherAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .Returns<int, CancellationToken>((_, _) => Task.Delay(1000).ContinueWith(_ => GetSampleForecasts()));
         
-        // Register the concrete class that the component expects
-        Services.AddSingleton(mockWeatherClient.Object);
+        // Register the interface implementation that the component expects
+        Services.AddSingleton<IWeatherApiClient>(mockWeatherClient.Object);
         
         // Act - Render the component
         var cut = RenderComponent<Weather>();
@@ -34,43 +37,48 @@ public class WeatherPageTests : TestContext
             "<p>This component demonstrates showing data loaded from a backend API service.</p>" +
             "<p><em>Loading...</em></p>");
     }
-      [Fact]
+    
+    [Fact]
     public async Task WeatherPage_DisplaysForecastData_WhenLoaded()
-
     {
         // Arrange - Create a mock WeatherApiClient
         var mockWeatherClient = new Mock<IWeatherApiClient>();
-          // Setup the mock to return sample forecasts
+        
+        // Setup the mock to return sample forecasts
         var sampleForecasts = GetSampleForecasts();
         mockWeatherClient
             .Setup(client => client.GetWeatherAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sampleForecasts);
         
-        // Register the interface that the component expects
+        // Register the interface implementation that the component expects
         Services.AddSingleton<IWeatherApiClient>(mockWeatherClient.Object);
         
         // Act - Render the component
         var cut = RenderComponent<Weather>();
-
-        // Wait for state to update with more reliable approach
-        var renderTask = Task.Run(async () => {
-            // Give component time to render initially
-            await Task.Delay(50);
-            
-            // Keep checking until we see rows or timeout
-            var timeout = DateTime.Now.AddSeconds(5);
-            while (DateTime.Now < timeout) {
-                cut.Render(); // Force re-render
-                if (cut.FindAll("tbody tr").Any()) {
-                    return; // Found rows, exit the loop
-                }
-                await Task.Delay(100); // Wait before checking again
-            }
-        });
         
-        // Wait for the rendering to complete with timeout
-        await renderTask;
-          // Debug output of rendered HTML to help diagnose issues
+        // More reliable approach to wait for component state update
+        // Give component a moment to start the initial render
+        await Task.Delay(50);
+        
+        // Use a timeout approach that properly awaits
+        var startTime = DateTime.Now;
+        var timeout = TimeSpan.FromSeconds(3);
+        
+        // Poll for the table rows to appear
+        while (!cut.FindAll("tbody tr").Any())
+        {
+            // Check timeout
+            if (DateTime.Now - startTime > timeout)
+            {
+                Assert.Fail("Component did not render table rows within the timeout period");
+            }
+            
+            // Force a render cycle and wait a bit before checking again
+            cut.Render();
+            await Task.Delay(100); 
+        }
+        
+        // Debug output of rendered HTML to help diagnose issues
         Console.WriteLine("Rendered HTML:");
         Console.WriteLine(cut.Markup);
         
@@ -93,15 +101,29 @@ public class WeatherPageTests : TestContext
         cut.Markup.Should().Contain("15", "because our third sample forecast temperature should appear");
         cut.Markup.Should().Contain("Cool", "because our third sample forecast summary should appear");
     }
-    
-    // Helper method to create sample weather forecasts
-    private static CoffeeTracker.Web.Clients.WeatherForecast[] GetSampleForecasts()
+      // Helper method to create sample weather forecasts
+    private static CoffeeTracker.Models.WeatherForecast[] GetSampleForecasts()
     {
-        return new CoffeeTracker.Web.Clients.WeatherForecast[]
+        return new CoffeeTracker.Models.WeatherForecast[]
         {
-            new CoffeeTracker.Web.Clients.WeatherForecast(new DateOnly(2025, 5, 1), 20, "Mild"),
-            new CoffeeTracker.Web.Clients.WeatherForecast(new DateOnly(2025, 5, 2), 25, "Warm"),
-            new CoffeeTracker.Web.Clients.WeatherForecast(new DateOnly(2025, 5, 3), 15, "Cool")
+            new CoffeeTracker.Models.WeatherForecast 
+            { 
+                Date = new DateOnly(2025, 5, 1), 
+                TemperatureC = 20, 
+                Summary = "Mild" 
+            },
+            new CoffeeTracker.Models.WeatherForecast 
+            { 
+                Date = new DateOnly(2025, 5, 2), 
+                TemperatureC = 25, 
+                Summary = "Warm" 
+            },
+            new CoffeeTracker.Models.WeatherForecast 
+            { 
+                Date = new DateOnly(2025, 5, 3), 
+                TemperatureC = 15, 
+                Summary = "Cool" 
+            }
         };
     }
 }

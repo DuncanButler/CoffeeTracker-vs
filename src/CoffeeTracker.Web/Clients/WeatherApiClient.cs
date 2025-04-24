@@ -1,3 +1,5 @@
+using CoffeeTracker.Models;
+
 namespace CoffeeTracker.Web.Clients;
 
 public interface IWeatherApiClient
@@ -27,7 +29,5 @@ public class WeatherApiClient(HttpClient httpClient): IWeatherApiClient
     }
 }
 
-public record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+// Removed duplicate WeatherForecast definition
+// Now using CoffeeTracker.Models.WeatherForecast instead

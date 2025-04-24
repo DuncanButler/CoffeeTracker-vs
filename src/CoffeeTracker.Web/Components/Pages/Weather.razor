@@ -1,5 +1,6 @@
 ﻿@page "/weather"
 @using CoffeeTracker.Web.Clients
+@using CoffeeTracker.Models
 @attribute [StreamRendering(true)]
 @attribute [OutputCache(Duration = 5)]
 
@@ -41,7 +42,7 @@ else
 }
 
 @code {
-    private WeatherForecast[]? forecasts;
+    private CoffeeTracker.Models.WeatherForecast[]? forecasts;
 
     protected override async Task OnInitializedAsync()
     {

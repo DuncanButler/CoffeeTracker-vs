@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\infrastructure\CoffeeTracker.ServiceDefaults\CoffeeTracker.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\CoffeeTracker.Models\CoffeeTracker.Models.csproj" />
   </ItemGroup>
 
 </Project>
