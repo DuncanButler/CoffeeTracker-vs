@@ -38,6 +38,19 @@ builder.Services.AddScoped<IWeatherRepository, WeatherRepository>();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
+// Add health checks
+builder.Services.AddHealthChecks()
+    // Add database health check with more detailed reporting
+    .AddDbContextCheck<WeatherDbContext>("weatherdb_ef_check", 
+        tags: new[] { "database", "ef" },
+        customTestQuery: async (context, cancellationToken) => 
+            await context.Forecasts.AnyAsync(cancellationToken: cancellationToken))
+    // Add PostgreSQL connection health check
+    .AddNpgSql(builder.Configuration.GetConnectionString("weatherdb") ?? "",
+        name: "weatherdb_connection",
+        tags: new[] { "database", "postgres" },
+        timeout: TimeSpan.FromSeconds(5));
+
 // Add Swagger services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -57,7 +70,32 @@ if (app.Environment.IsDevelopment())
 // map weather endpoint
 app.MapWeatherEndpoints();
 
-// map default extensions form service defaults
+// Add health check endpoint with detailed results
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) => 
+    {
+        context.Response.ContentType = "application/json";
+        
+        var result = new 
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new 
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                duration = e.Value.Duration.ToString()
+            }),
+            totalDuration = report.TotalDuration.ToString()
+        };
+        
+        await System.Text.Json.JsonSerializer.SerializeAsync(
+            context.Response.Body, result);
+    }
+});
+
+// map default extensions from service defaults
 app.MapDefaultEndpoints();
 
 app.Run();
