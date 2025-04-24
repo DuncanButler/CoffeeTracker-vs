@@ -5,6 +5,9 @@ using CoffeeTracker.ApiService.Repositories;
 using CoffeeTracker.ApiService.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 // This approach makes the WebApplicationFactory work with integration tests
 namespace CoffeeTracker.ApiService;
@@ -37,6 +40,45 @@ public partial class Program
                     npgsqlBuilder.MigrationsHistoryTable("__EFMigrationsHistory", "public");
                 });
             });
+        
+        // Configure JWT authentication
+        builder.Services.AddAuthentication(options => 
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options => 
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                ValidAudience = builder.Configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "DefaultDevelopmentKeyThatShouldBeReplaced"))
+            };
+        });
+        
+        // Add authorization policies
+        builder.Services.AddAuthorization(options =>
+        {
+            // Policy for website access
+            options.AddPolicy("WebClientPolicy", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireClaim("ClientType", "WebApplication");
+            });
+            
+            // Policy for internal API access (service-to-service)
+            options.AddPolicy("InternalApiPolicy", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireClaim("ClientType", "InternalService");
+            });
+        });
         
         // add service
         builder.Services.AddScoped<IWeatherService, WeatherService>();
