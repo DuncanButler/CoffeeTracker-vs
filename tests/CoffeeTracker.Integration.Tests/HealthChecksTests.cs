@@ -1,11 +1,14 @@
 using System.Net;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Configuration;
 using CoffeeTracker.ApiService;
@@ -14,125 +17,129 @@ using CoffeeTracker.ApiService.Interfaces;
 using CoffeeTracker.Models;
 using Moq;
 using Xunit;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace CoffeeTracker.Integration.Tests;
-
-/// <summary>
-/// Test factory that mocks the database-related services for health check tests
-/// </summary>
-public class HealthCheckWebApplicationFactory : WebApplicationFactory<Program>
+namespace CoffeeTracker.Integration.Tests
 {
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    /// <summary>
+    /// Test factory that mocks the database-related services for health check tests
+    /// </summary>
+    public class HealthCheckWebApplicationFactory : WebApplicationFactory<Program>
     {
-        // Add test-specific configuration
-        builder.ConfigureAppConfiguration((context, config) => {
-            config.AddJsonFile("appsettings.Testing.json", optional: false);
-            
-            // Override the connection string with an empty one
-            var inMemorySettings = new Dictionary<string, string?>
-            {
-                {"ConnectionStrings:weatherdb", ""}
-            };
-            config.AddInMemoryCollection(inMemorySettings);
-        });
-        
-        // Use Testing environment
-        builder.UseEnvironment("Testing");
-        
-        builder.ConfigureServices(services => 
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            // Remove and replace DB context with an in-memory version
-            RemoveService<DbContextOptions<WeatherDbContext>>(services);
-            RemoveService<WeatherDbContext>(services);
-            
-            // Add a mock DB context that won't actually connect to a database
-            services.AddDbContext<WeatherDbContext>(options => 
-                options.UseInMemoryDatabase("TestHealthCheckDb"));
+            // Add test-specific configuration
+            builder.ConfigureAppConfiguration((context, config) => {
+                // Use the correct path to the test settings file
+                string testSettingsPath = Path.Combine(
+                    Directory.GetCurrentDirectory(), 
+                    "appsettings.Testing.json");
                 
-            // Add a mock weather repository that doesn't need a real DB
-            RemoveService<IWeatherRepository>(services);
-            var mockRepo = new Mock<IWeatherRepository>();
-            mockRepo.Setup(r => r.GetForcastForDay(It.IsAny<DateOnly>()))
-                .ReturnsAsync(new WeatherForecast { 
-                    Date = DateOnly.FromDateTime(DateTime.Today),
-                    TemperatureC = 25,
-                    Summary = "Test Weather" 
-                });
-            services.AddSingleton(mockRepo.Object);
+                // Make the file optional to avoid errors if it doesn't exist
+                config.AddJsonFile(testSettingsPath, optional: true);
+                
+                // Override the connection string with an empty one
+                var inMemorySettings = new Dictionary<string, string?>
+                {
+                    {"ConnectionStrings:weatherdb", ""}
+                };
+                config.AddInMemoryCollection(inMemorySettings);
+            });
             
-            // Remove all existing health check registrations
-            RemoveService<HealthCheckService>(services);
+            // Use Testing environment
+            builder.UseEnvironment("Testing");
             
-            // Remove any health check registrations 
-            var descriptors = services.Where(
-                s => s.ServiceType.FullName?.Contains("HealthChecks") == true).ToList();
-            foreach (var descriptor in descriptors)
+            builder.ConfigureServices(services => 
+            {
+                // Remove and replace DB context with an in-memory version
+                RemoveService<DbContextOptions<WeatherDbContext>>(services);
+                RemoveService<WeatherDbContext>(services);
+                
+                // Add a mock DB context that won't actually connect to a database
+                services.AddDbContext<WeatherDbContext>(options => 
+                    options.UseInMemoryDatabase("TestHealthCheckDb"));
+                    
+                // Add a mock weather repository that doesn't need a real DB
+                RemoveService<IWeatherRepository>(services);
+                var mockRepo = new Mock<IWeatherRepository>();
+                mockRepo.Setup(r => r.GetForcastForDay(It.IsAny<DateOnly>()))
+                    .ReturnsAsync(new WeatherForecast { 
+                        Date = DateOnly.FromDateTime(DateTime.Today),
+                        TemperatureC = 25,
+                        Summary = "Test Weather" 
+                    });
+                services.AddSingleton(mockRepo.Object);
+                
+                // Remove all existing health check registrations
+                RemoveService<HealthCheckService>(services);
+                
+                // Remove any health check registrations 
+                var descriptors = services.Where(
+                    s => s.ServiceType.FullName?.Contains("HealthChecks") == true).ToList();
+                foreach (var descriptor in descriptors)
+                {
+                    services.Remove(descriptor);
+                }
+                
+                // Add our own test-friendly health checks
+                services.AddHealthChecks()
+                    .AddCheck("memory_check", () => HealthCheckResult.Healthy());
+            });
+        }
+        
+        private void RemoveService<T>(IServiceCollection services)
+        {
+            var descriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(T));
+            if (descriptor != null)
             {
                 services.Remove(descriptor);
             }
-            
-            // Add our own test-friendly health checks
-            services.AddHealthChecks()
-                .AddCheck("memory_check", () => HealthCheckResult.Healthy());
-        });
-    }
-    
-    private void RemoveService<T>(IServiceCollection services)
-    {
-        var descriptor = services.SingleOrDefault(
-            d => d.ServiceType == typeof(T));
-        if (descriptor != null)
-        {
-            services.Remove(descriptor);
         }
     }
-}
 
-public class HealthChecksTests : IClassFixture<HealthCheckWebApplicationFactory>
-{
-    private readonly WebApplicationFactory<Program> _factory;
-
-    public HealthChecksTests(HealthCheckWebApplicationFactory factory)
+    public class HealthChecksTests : IClassFixture<HealthCheckWebApplicationFactory>
     {
-        _factory = factory;
-    }
+        private readonly WebApplicationFactory<Program> _factory;
 
-    [Fact]
-    public async Task Health_Endpoint_Returns_Success_Status()
-    {
-        // Arrange
-        var client = _factory.CreateClient();
+        public HealthChecksTests(HealthCheckWebApplicationFactory factory)
+        {
+            _factory = factory;
+        }
 
-        // Act
-        var response = await client.GetAsync("/health");
-        
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK, 
-            because: "health endpoint should return 200 OK when the application is healthy");
-        
-        var content = await response.Content.ReadAsStringAsync();
-        content.Should().NotBeNullOrEmpty("because health check response should contain data");
-    }
+        [Fact]
+        public async Task Health_Endpoint_Returns_Success_Status()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
 
-    [Fact]
-    public async Task Health_Endpoint_Contains_Database_Check()
-    {
-        // Arrange
-        var client = _factory.CreateClient();
+            // Act
+            var response = await client.GetAsync("/health");
+            
+            // Assert
+            response.StatusCode.Should().Be(HttpStatusCode.OK, 
+                because: "health endpoint should return 200 OK when the application is healthy");
+            
+            var content = await response.Content.ReadAsStringAsync();
+            content.Should().NotBeNullOrEmpty("because health check response should contain data");
+        }
 
-        // Act
-        var response = await client.GetAsync("/health");
-        
-        // Make sure the response is successful
-        response.EnsureSuccessStatusCode();
-        
-        var content = await response.Content.ReadAsStringAsync();
-        
-        // Assert - check for our database checks
-        content.Should().Contain("memory_check", 
-            because: "health check response should include the memory_check check");
+        [Fact]
+        public async Task Health_Endpoint_Contains_Database_Check()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            // Act
+            var response = await client.GetAsync("/health");
+            
+            // Make sure the response is successful
+            response.EnsureSuccessStatusCode();
+            
+            var content = await response.Content.ReadAsStringAsync();
+            
+            // Assert - check for our database checks
+            content.Should().Contain("memory_check", 
+                because: "health check response should include the memory_check check");
+        }
     }
 }
