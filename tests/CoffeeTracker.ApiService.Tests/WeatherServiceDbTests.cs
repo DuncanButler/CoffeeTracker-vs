@@ -1,14 +1,8 @@
-using CoffeeTracker.ApiService.Interfaces;
 using CoffeeTracker.ApiService.Repositories;
 using CoffeeTracker.ApiService.Services;
 using CoffeeTracker.Data;
 using CoffeeTracker.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace CoffeeTracker.ApiService.Tests;
 

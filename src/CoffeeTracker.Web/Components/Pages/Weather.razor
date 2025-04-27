@@ -1,20 +1,21 @@
 ﻿@page "/weather"
-@using CoffeeTracker.Web.Clients
 @using CoffeeTracker.Models
-@attribute [StreamRendering(true)]
-@attribute [OutputCache(Duration = 5)]
+@using CoffeeTracker.Web.Clients
+@inject IWeatherClient WeatherClient
 
-@inject IWeatherApiClient WeatherApi
+<h1>Weather Forecast</h1>
 
-<PageTitle>Weather</PageTitle>
+<p>This component demonstrates fetching data from the API with authentication.</p>
 
-<h1>Weather</h1>
-
-<p>This component demonstrates showing data loaded from a backend API service.</p>
-
-@if (forecasts == null)
+@if (_forecasts == null)
 {
     <p><em>Loading...</em></p>
+}
+else if (_errorMessage != null)
+{
+    <div class="alert alert-danger">
+        <p>Error: @_errorMessage</p>
+    </div>
 }
 else
 {
@@ -22,13 +23,13 @@ else
         <thead>
             <tr>
                 <th>Date</th>
-                <th aria-label="Temperature in Celsius">Temp. (C)</th>
-                <th aria-label="Temperature in Farenheit">Temp. (F)</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
                 <th>Summary</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var forecast in forecasts)
+            @foreach (var forecast in _forecasts)
             {
                 <tr>
                     <td>@forecast.Date.ToShortDateString()</td>
@@ -42,10 +43,23 @@ else
 }
 
 @code {
-    private CoffeeTracker.Models.WeatherForecast[]? forecasts;
+    private WeatherForecast[]? _forecasts;
+    private string? _errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        forecasts = await WeatherApi.GetWeatherAsync();
+        try
+        {
+            _forecasts = await WeatherClient.GetForecastAsync();
+            
+            if (_forecasts == null || _forecasts.Length == 0)
+            {
+                _errorMessage = "No forecast data was received.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error loading forecast data: {ex.Message}";
+        }
     }
 }

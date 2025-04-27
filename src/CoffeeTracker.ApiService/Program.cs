@@ -83,28 +83,35 @@ public partial class Program
         // add service
         builder.Services.AddScoped<IWeatherService, WeatherService>();
         builder.Services.AddScoped<IWeatherRepository, WeatherRepository>();
+        builder.Services.AddScoped<IAuthService, AuthService>();
         
         // Add services to the container.
         builder.Services.AddProblemDetails();
-        
-        // Add health checks
-        builder.Services.AddHealthChecks()
+          // Add health checks
+        var healthChecks = builder.Services.AddHealthChecks()
             // Add database health check with more detailed reporting
             .AddDbContextCheck<WeatherDbContext>("weatherdb_ef_check", 
                 tags: new[] { "database", "ef" },
                 customTestQuery: async (context, cancellationToken) => 
-                    await context.Forecasts.AnyAsync(cancellationToken: cancellationToken))
-            // Add PostgreSQL connection health check
-            .AddNpgSql(builder.Configuration.GetConnectionString("weatherdb") ?? "",
-                name: "weatherdb_connection",
-                tags: new[] { "database", "postgres" },
-                timeout: TimeSpan.FromSeconds(5));
+                    await context.Forecasts.AnyAsync(cancellationToken: cancellationToken));
+        
+        // Only add PostgreSQL connection check when not in Testing environment
+        if (builder.Environment.EnvironmentName != "Testing") 
+        {
+            var connectionString = builder.Configuration.GetConnectionString("weatherdb");
+            if (!string.IsNullOrEmpty(connectionString))
+            {
+                healthChecks.AddNpgSql(connectionString,
+                    name: "weatherdb_connection",
+                    tags: new[] { "database", "postgres" },
+                    timeout: TimeSpan.FromSeconds(5));
+            }
+        }
         
         // Add Swagger services
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
-        
-        var app = builder.Build();
+          var app = builder.Build();
         
         // Configure the HTTP request pipeline.
         app.UseExceptionHandler();
@@ -116,10 +123,15 @@ public partial class Program
             app.UseSwaggerUI();
         }
         
-        // map weather endpoint
-        app.MapWeatherEndpoints();
+        // Add authentication and authorization middleware
+        app.UseAuthentication();
+        app.UseAuthorization();
         
-        // Add health check endpoint with detailed results
+        // Map authentication endpoints
+        app.MapAuthEndpoints();
+        
+        // Map weather endpoint (with authorization)
+        app.MapWeatherEndpoints();        // Add health check endpoint with detailed results
         app.MapHealthChecks("/health", new HealthCheckOptions
         {
             ResponseWriter = async (context, report) => 

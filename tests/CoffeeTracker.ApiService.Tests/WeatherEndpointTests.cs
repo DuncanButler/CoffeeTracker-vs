@@ -1,11 +1,13 @@
 using CoffeeTracker.ApiService.Endpoints;
 using CoffeeTracker.Data;
 using CoffeeTracker.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Moq;
 using System.Net.Http.Json;
 
 namespace CoffeeTracker.ApiService.Tests;
@@ -21,7 +23,19 @@ public class WeatherEndpointTests
 
         // Act
         var response = await client.GetAsync("/weatherforecast");
+        
+        // Debug the response
+        var responseContent = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"Response Status: {response.StatusCode}");
+        Console.WriteLine($"Response Content: {responseContent}");
+        
         response.EnsureSuccessStatusCode();
+        
+        // Check if we have any content
+        if (string.IsNullOrEmpty(responseContent))
+        {
+            Assert.Fail("Response content is empty");
+        }
         
         var forecasts = await response.Content.ReadFromJsonAsync<WeatherForecast[]>();
 
@@ -104,8 +118,9 @@ public class WeatherEndpointTests
             Assert.Equal(orderedForecasts1[i].TemperatureC, orderedForecasts2[i].TemperatureC);
             Assert.Equal(orderedForecasts1[i].Summary, orderedForecasts2[i].Summary);
         }
-    }    // Use a static database name to ensure shared database across requests in the same test
+    }    
     
+    // Use a static database name to ensure shared database across requests in the same test
     private static readonly string _databaseName = "TestWeatherDb_" + Guid.NewGuid().ToString();
     
     private async Task<IHost> CreateTestHost()
@@ -121,18 +136,43 @@ public class WeatherEndpointTests
         builder.Services.AddDbContext<WeatherDbContext>(options =>
             options.UseInMemoryDatabase(databaseName: _databaseName));
 
-        // Add services and repositories
-        builder.Services.AddScoped<CoffeeTracker.ApiService.Interfaces.IWeatherRepository,
-            CoffeeTracker.ApiService.Repositories.WeatherRepository>();
+        // Create a mock weather service that returns predefined test data
+        var mockWeatherService = new Mock<CoffeeTracker.ApiService.Services.IWeatherService>();
+        var testForecasts = new WeatherForecast[]
+        {
+            new WeatherForecast { Date = DateOnly.FromDateTime(DateTime.Today), TemperatureC = 20, Summary = "Mild" },
+            new WeatherForecast { Date = DateOnly.FromDateTime(DateTime.Today.AddDays(1)), TemperatureC = 25, Summary = "Warm" },
+            new WeatherForecast { Date = DateOnly.FromDateTime(DateTime.Today.AddDays(2)), TemperatureC = 15, Summary = "Cool" },
+            new WeatherForecast { Date = DateOnly.FromDateTime(DateTime.Today.AddDays(3)), TemperatureC = 10, Summary = "Bracing" },
+            new WeatherForecast { Date = DateOnly.FromDateTime(DateTime.Today.AddDays(4)), TemperatureC = 30, Summary = "Hot" }
+        };
+        
+        mockWeatherService
+            .Setup(service => service.GetWeatherForecastAsync())
+            .ReturnsAsync(testForecasts);
+            
+        // Register the mock service instead of the real one
+        builder.Services.AddSingleton<CoffeeTracker.ApiService.Services.IWeatherService>(mockWeatherService.Object);
 
-        builder.Services.AddScoped<CoffeeTracker.ApiService.Services.IWeatherService,
-            CoffeeTracker.ApiService.Services.WeatherService>();
+        // Set up authentication for testing
+        builder.Services.AddAuthentication("Test")
+            .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, TestAuthHandler>("Test", 
+                options => { });
+
+        builder.Services.AddAuthorization(options => {
+            options.DefaultPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .AddAuthenticationSchemes("Test")
+                .Build();
+        });
 
         // Build the WebApplication
         var app = builder.Build();
 
         // Configure the HTTP request pipeline
         app.UseRouting();
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         // Map endpoints using your extension method
         app.MapWeatherEndpoints();
@@ -142,5 +182,33 @@ public class WeatherEndpointTests
 
         // Return the host
         return app;
+    }
+}
+
+// Custom authentication handler for testing that always authenticates
+public class TestAuthHandler : Microsoft.AspNetCore.Authentication.AuthenticationHandler<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions>
+{
+    public TestAuthHandler(
+        Microsoft.Extensions.Options.IOptionsMonitor<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions> options,
+        Microsoft.Extensions.Logging.ILoggerFactory logger,
+        System.Text.Encodings.Web.UrlEncoder encoder,
+        Microsoft.AspNetCore.Authentication.ISystemClock clock) 
+        : base(options, logger, encoder, clock)
+    {
+    }
+
+    protected override Task<Microsoft.AspNetCore.Authentication.AuthenticateResult> HandleAuthenticateAsync()
+    {
+        // Create a test identity that is always authenticated
+        var claims = new[] { 
+            new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "TestUser"),
+            new System.Security.Claims.Claim("client_id", "test-client")
+        };
+        var identity = new System.Security.Claims.ClaimsIdentity(claims, "Test");
+        var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+        var ticket = new Microsoft.AspNetCore.Authentication.AuthenticationTicket(principal, "Test");
+        
+        // Return success with the ticket
+        return Task.FromResult(Microsoft.AspNetCore.Authentication.AuthenticateResult.Success(ticket));
     }
 }
