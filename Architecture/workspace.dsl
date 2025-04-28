@@ -6,28 +6,50 @@ workspace "Name" "Description" {
         u = person "User"
         ss = softwareSystem "Software System" {
             wa = container "Web Application"
-            be = container "API and Services"
-            db = container "Database Schema" {
+            be = container "Backend and API" {
+                api = component "API and Services"
+                dta = component "Data Context"
+                mig = component "Migrations"
+                mod = component "Models"
+            }
+            db = container "Weather Db" {
                 tags "Database"
+
+                ft = component "Forcast Table"
             }
         }
 
         u -> ss.wa "Uses"
-        ss.wa -> ss.be "Calls"
-        ss.be -> ss.db "Reads from and writes to"
+        ss.wa -> ss.be.api "Calls"
+        ss.be.api -> ss.be.dta "Used to get Data"
+        ss.be.api -> ss.be.mod "Uses"
+        ss.be.mig -> ss.be.dta "Used to get Data"
+        ss.be.mig -> ss.be.mod "Uses"
+        
+        ss.be.dta -> ss.db.ft "Reads from and writes to"
     }
 
     views {
         systemContext ss "Context" {
-            title "overall system context"
+            title "Overall System Context"
             include *
             autolayout lr
         }
 
         container ss "Container" {
-            title "software system"
+            title "Software System"
             include *
             autolayout lr
+        }
+
+        component ss.be "Component" {
+            title "Backend Services"     
+            include *
+        }
+
+        component ss.db "DB-Component" {
+            title "Weather Database"
+            include *
         }
 
         styles {

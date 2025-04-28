@@ -12,6 +12,9 @@ I created the aspire default web app project in visual studio and moved the proj
   - ServiceDefaults
 - src
   - ApiService
+  - Data
+  - Migrations
+  - Models
   - web
 
   this was run inside vscode to ensure it runs correctly
