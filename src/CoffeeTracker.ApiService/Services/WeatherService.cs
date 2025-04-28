@@ -26,12 +26,12 @@ public class WeatherService : IWeatherService
         for (int index = 1; index <= 5; index++)
         {
             var day = DateOnly.FromDateTime(DateTime.Now.AddDays(index));
-            WeatherForecast? dayForecast = await _repository.GetForcastForDay(day);
+            WeatherForecast? dayForecast = await _repository.GetForecastForDay(day);
 
             if (dayForecast is null)
             {
                 dayForecast = GenerateForecastForDay(day);
-                await _repository.SaveForcastForDay(dayForecast);
+                await _repository.SaveForecastForDay(dayForecast);
             }
             forecasts.Add(dayForecast);
         }
