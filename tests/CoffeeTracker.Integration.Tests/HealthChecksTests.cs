@@ -49,17 +49,16 @@ namespace CoffeeTracker.Integration.Tests
             builder.UseEnvironment("Testing");
             
             builder.ConfigureServices(services => 
-            {
-                // Remove and replace DB context with an in-memory version
-                RemoveService<DbContextOptions<WeatherDbContext>>(services);
-                RemoveService<WeatherDbContext>(services);
+            {                // Remove and replace DB context with an in-memory version
+                services.RemoveAll<DbContextOptions<WeatherDbContext>>();
+                services.RemoveAll<WeatherDbContext>();
                 
                 // Add a mock DB context that won't actually connect to a database
                 services.AddDbContext<WeatherDbContext>(options => 
                     options.UseInMemoryDatabase("TestHealthCheckDb"));
                     
                 // Add a mock weather repository that doesn't need a real DB
-                RemoveService<IWeatherRepository>(services);
+                services.RemoveAll<IWeatherRepository>();
                 var mockRepo = new Mock<IWeatherRepository>();
                 mockRepo.Setup(r => r.GetForcastForDay(It.IsAny<DateOnly>()))
                     .ReturnsAsync(new WeatherForecast { 
@@ -70,7 +69,7 @@ namespace CoffeeTracker.Integration.Tests
                 services.AddSingleton(mockRepo.Object);
                 
                 // Remove all existing health check registrations
-                RemoveService<HealthCheckService>(services);
+                services.RemoveAll<HealthCheckService>();
                 
                 // Remove any health check registrations 
                 var descriptors = services.Where(
@@ -85,16 +84,7 @@ namespace CoffeeTracker.Integration.Tests
                     .AddCheck("memory_check", () => HealthCheckResult.Healthy());
             });
         }
-        
-        private void RemoveService<T>(IServiceCollection services)
-        {
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(T));
-            if (descriptor != null)
-            {
-                services.Remove(descriptor);
-            }
-        }
+          // Private helper methods are no longer needed as we're using the TestServiceCollectionExtensions
     }
 
     public class HealthChecksTests : IClassFixture<HealthCheckWebApplicationFactory>
