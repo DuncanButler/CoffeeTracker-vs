@@ -60,7 +60,7 @@ namespace CoffeeTracker.Integration.Tests
                 // Add a mock weather repository that doesn't need a real DB
                 services.RemoveAll<IWeatherRepository>();
                 var mockRepo = new Mock<IWeatherRepository>();
-                mockRepo.Setup(r => r.GetForcastForDay(It.IsAny<DateOnly>()))
+                mockRepo.Setup(r => r.GetForecastForDay(It.IsAny<DateOnly>()))
                     .ReturnsAsync(new WeatherForecast { 
                         Date = DateOnly.FromDateTime(DateTime.Today),
                         TemperatureC = 25,

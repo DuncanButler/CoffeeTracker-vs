@@ -85,7 +85,7 @@ namespace CoffeeTracker.Integration.Tests
         /// <summary>
         /// Returns a test forecast for any given day.
         /// </summary>
-        public Task<WeatherForecast?> GetForcastForDay(DateOnly day)
+        public Task<WeatherForecast?> GetForecastForDay(DateOnly day)
         {
             return Task.FromResult<WeatherForecast?>(new WeatherForecast
             {
@@ -98,7 +98,7 @@ namespace CoffeeTracker.Integration.Tests
         /// <summary>
         /// No-op implementation for testing.
         /// </summary>
-        public Task SaveForcastForDay(WeatherForecast dayForecast)
+        public Task SaveForecastForDay(WeatherForecast dayForecast)
         {
             return Task.CompletedTask;
         }

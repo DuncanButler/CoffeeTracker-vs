@@ -17,7 +17,8 @@ public class WeatherRepository : IWeatherRepository
     {
         _dbContext = dbContext;
         _logger = logger;
-    }    public async Task<WeatherForecast?> GetForecastForDay(DateOnly day)
+    }
+    public async Task<WeatherForecast?> GetForecastForDay(DateOnly day)
     {
         try
         {
