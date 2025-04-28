@@ -3,9 +3,13 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Collections.Generic;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using CoffeeTracker.ApiService;
@@ -24,40 +28,44 @@ namespace CoffeeTracker.Integration.Tests
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            // Add test-specific configuration
+            // Use Testing environment
+            builder.UseEnvironment("Testing");
+            
+            // Configure services
             builder.ConfigureAppConfiguration((context, config) => 
             {
-                // Use Testing environment
-                context.HostingEnvironment.EnvironmentName = "Testing";
-                
-                // Override the connection string with an empty one
+                // JWT configuration
                 var inMemorySettings = new Dictionary<string, string?>
                 {
-                    {"ConnectionStrings:weatherdb", ""}
+                    {"ConnectionStrings:weatherdb", ""},
+                    {"Jwt:Issuer", "https://coffeetracker-test.com"},
+                    {"Jwt:Audience", "https://coffeetracker-test.com"},
+                    {"Jwt:Key", "ThisIsAVeryLongSecretKeyForTestingPurposesOnly12345"},
+                    {"Jwt:ExpiryInMinutes", "60"}
                 };
                 config.AddInMemoryCollection(inMemorySettings);
             });
             
-            builder.UseEnvironment("Testing");
-            
-            builder.ConfigureServices(services =>
+            builder.ConfigureTestServices(services => 
             {
-                // Remove ALL database-related services
+                // Remove the DbContext registration
                 ServiceCollectionExtensions.RemoveAll<DbContextOptions>(services);
                 ServiceCollectionExtensions.RemoveAll<DbContextOptions<WeatherDbContext>>(services);
                 ServiceCollectionExtensions.RemoveAll<WeatherDbContext>(services);
                 
-                // Add in-memory database
+                // Add an in-memory database
                 services.AddDbContext<WeatherDbContext>(options => 
-                    options.UseInMemoryDatabase("TestAuthDb"));
+                    options.UseInMemoryDatabase("TestDb_" + Guid.NewGuid().ToString()));
                 
-                // Replace the real weather repository with our test version
+                // Replace the weather service with our test implementation
                 ServiceCollectionExtensions.RemoveAll<IWeatherRepository>(services);
                 ServiceCollectionExtensions.RemoveAll<IWeatherService>(services);
-                
-                // Add test implementations that don't use a real database
                 services.AddScoped<IWeatherRepository, TestWeatherRepository>();
                 services.AddScoped<IWeatherService, TestWeatherService>();
+                
+                // Ensure auth service is registered with our test configuration
+                ServiceCollectionExtensions.RemoveAll<IAuthService>(services);
+                services.AddScoped<IAuthService, AuthService>();
             });
         }
     }
@@ -67,7 +75,6 @@ namespace CoffeeTracker.Integration.Tests
     {
         public Task<WeatherForecast?> GetForcastForDay(DateOnly day)
         {
-            // Return a test forecast
             return Task.FromResult<WeatherForecast?>(new WeatherForecast
             {
                 Date = day,
@@ -78,7 +85,6 @@ namespace CoffeeTracker.Integration.Tests
 
         public Task SaveForcastForDay(WeatherForecast dayForecast)
         {
-            // No-op implementation for testing
             return Task.CompletedTask;
         }
     }
@@ -88,7 +94,6 @@ namespace CoffeeTracker.Integration.Tests
     {
         public Task<WeatherForecast[]> GetWeatherForecastAsync()
         {
-            // Return test forecasts
             var forecasts = new[]
             {
                 new WeatherForecast
@@ -134,6 +139,11 @@ namespace CoffeeTracker.Integration.Tests
             var tokenJson = JsonSerializer.Serialize(tokenRequest);
             var tokenContent = new StringContent(tokenJson, Encoding.UTF8, "application/json");
             var tokenResponse = await client.PostAsync("/auth/token", tokenContent);
+            
+            // Debug info for the token request
+            Console.WriteLine($"Token request status: {tokenResponse.StatusCode}");
+            var tokenResponseContent = await tokenResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"Token response: {tokenResponseContent}");
 
             // Assert token request is successful
             tokenResponse.IsSuccessStatusCode.Should().BeTrue("because API key authentication should succeed");
@@ -144,6 +154,11 @@ namespace CoffeeTracker.Integration.Tests
             // Step 2: Call the weather endpoint with the JWT token
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
             var weatherResponse = await client.GetAsync("/weatherforecast");
+            
+            // Debug info for weather request
+            Console.WriteLine($"Weather request status: {weatherResponse.StatusCode}");
+            var weatherResponseContent = await weatherResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"Weather response: {weatherResponseContent}");
 
             // Assert authorized access works
             weatherResponse.IsSuccessStatusCode.Should().BeTrue("because access with a valid token should succeed");
